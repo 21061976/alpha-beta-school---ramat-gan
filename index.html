@@ -1,1 +1,715 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>דוח ניהול סיכונים - מיזם אלף-בית</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #2c3e50;
+}
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  background: rgba(255,255,255,0.98);
+  border-radius: 20px;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+  overflow: hidden;
+}
+.header {
+  background: linear-gradient(135deg, #1a3a5c 0%, #2c3e50 100%);
+  color: white;
+  padding: 50px 40px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.header::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+  opacity: 0.3;
+}
+.header h1 { font-size: 2.8em; margin-bottom: 12px; position: relative; z-index: 1; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+.header .subtitle { font-size: 1.3em; opacity: 0.9; position: relative; z-index: 1; margin-bottom: 8px; }
+.date-badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.2);
+  padding: 8px 18px; border-radius: 20px; font-size: 0.9em; margin-top: 12px;
+  backdrop-filter: blur(10px); position: relative; z-index: 1;
+}
+.edit-toggle {
+  position: fixed; top: 20px; left: 20px;
+  background: #3498db; color: white; border: none;
+  padding: 13px 22px; border-radius: 25px; cursor: pointer;
+  font-size: 0.95em; font-weight: bold;
+  box-shadow: 0 4px 15px rgba(52,152,219,0.4); z-index: 1000; transition: all 0.3s ease;
+}
+.edit-toggle:hover { background: #2980b9; transform: translateY(-2px); }
+.edit-toggle.active { background: #27ae60; }
+.pdf-export {
+  position: fixed; top: 75px; left: 20px;
+  background: #e74c3c; color: white; border: none;
+  padding: 13px 22px; border-radius: 25px; cursor: pointer;
+  font-size: 0.95em; font-weight: bold;
+  box-shadow: 0 4px 15px rgba(231,76,60,0.4); z-index: 1000; transition: all 0.3s ease;
+}
+.pdf-export:hover { background: #c0392b; transform: translateY(-2px); }
+.success-message {
+  position: fixed; top: 100px; right: 20px;
+  background: #27ae60; color: white;
+  padding: 15px 25px; border-radius: 10px; font-weight: bold;
+  opacity: 0; transform: translateX(400px); transition: all 0.3s ease; z-index: 1001;
+}
+.success-message.show { opacity: 1; transform: translateX(0); }
+.editable { padding: 3px; border-radius: 3px; transition: all 0.3s ease; }
+.editable[contenteditable="true"] {
+  background: rgba(52,152,219,0.1); border: 2px dashed #3498db;
+  outline: none; cursor: text; padding: 5px;
+}
+.nav-menu {
+  position: sticky; top: 0;
+  background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+  z-index: 1000; box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+.nav-links { display: flex; justify-content: center; padding: 0; list-style: none; margin: 0; }
+.nav-links li { flex: 1; }
+.nav-links a {
+  display: block; padding: 16px 10px; color: #bdc3c7;
+  text-decoration: none; text-align: center; font-weight: 600; font-size: 0.85em;
+  transition: all 0.3s ease; border-left: 1px solid #2c3e50; position: relative;
+}
+.nav-links li:first-child a { border-left: none; }
+.nav-links a:hover { background: #2c3e50; color: white; }
+.section { scroll-margin-top: 80px; }
+.section-header {
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  color: white; padding: 25px 40px; font-size: 2em; font-weight: bold;
+  text-align: center; position: relative;
+}
+.section-header::after {
+  content: ''; position: absolute; bottom: -12px; left: 50%; transform: translateX(-50%);
+  width: 70px; height: 5px; background: rgba(255,255,255,0.8); border-radius: 3px;
+}
+.project-overview { padding: 40px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); }
+.overview-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 22px; margin-top: 25px; }
+.overview-card {
+  background: white; padding: 22px; border-radius: 15px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08); border-top: 4px solid #3498db; transition: all 0.3s ease;
+}
+.overview-card:hover { transform: translateY(-3px); box-shadow: 0 12px 35px rgba(0,0,0,0.12); }
+.overview-card h4 { color: #2c3e50; margin-bottom: 10px; font-size: 1.1em; display: flex; align-items: center; gap: 8px; }
+.icon { font-size: 1.4em; }
+.goals-section { background: white; margin: 28px 40px; padding: 28px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); }
+.goals-section h3 { color: #2c3e50; margin-bottom: 18px; font-size: 1.4em; text-align: center; }
+.goal-item, .deliverable-item {
+  background: #f8f9fa; margin: 12px 0; padding: 18px; border-radius: 10px;
+  border-right: 4px solid #27ae60; transition: all 0.3s ease;
+}
+.goal-item:hover, .deliverable-item:hover { background: #e9ecef; transform: translateX(-5px); }
+.risks-container { padding: 40px; background: white; }
+.risk-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 18px; margin-bottom: 35px; }
+.summary-card {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 22px; border-radius: 15px; text-align: center; box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+.summary-number { font-size: 3em; font-weight: bold; margin-bottom: 8px; }
+.very-high { color: #e74c3c; }
+.high { color: #f39c12; }
+.medium { color: #e8b800; }
+.low { color: #27ae60; }
+.risks-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 25px; margin-top: 28px; }
+.risk-card {
+  background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  padding: 28px; transition: all 0.3s ease; border-top: 6px solid; position: relative; overflow: hidden;
+}
+.risk-card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.15); }
+.risk-very-high { border-top-color: #e74c3c; }
+.risk-high { border-top-color: #f39c12; }
+.risk-medium { border-top-color: #e8b800; }
+.risk-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; gap: 12px; }
+.risk-title { font-size: 1.25em; font-weight: bold; color: #2c3e50; flex: 1; }
+.risk-severity { padding: 7px 14px; border-radius: 25px; font-size: 0.8em; font-weight: bold; color: white; white-space: nowrap; }
+.severity-very-high { background: #e74c3c; }
+.severity-high { background: #f39c12; }
+.severity-medium { background: #e8b800; color: #2c3e50; }
+.risk-metrics { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 18px 0; text-align: center; }
+.metric { background: #f8f9fa; padding: 14px; border-radius: 10px; }
+.metric-value { font-size: 1.7em; font-weight: bold; color: #2c3e50; }
+.metric-label { font-size: 0.85em; color: #7f8c8d; margin-top: 4px; }
+.risk-description {
+  color: #34495e; line-height: 1.7; background: #f8f9fa;
+  padding: 18px; border-radius: 10px; margin-top: 14px; border-right: 4px solid #bdc3c7;
+}
+.risk-evidence {
+  color: #742a2a; line-height: 1.7; background: #fff5f5;
+  padding: 18px; border-radius: 10px; margin-top: 10px; border-right: 4px solid #e53e3e;
+  font-size: 0.95em;
+}
+.risk-evidence strong { color: #c53030; }
+.risk-impact { margin-top: 18px; }
+.impact-title { font-weight: bold; color: #e74c3c; margin-bottom: 8px; }
+.impact-list { list-style: none; padding-right: 12px; }
+.impact-list li { padding: 7px 0; border-bottom: 1px solid #ecf0f1; }
+.impact-list li::before { content: '⚠️'; margin-left: 8px; }
+.opportunity-title { font-weight: bold; color: #27ae60; margin-top: 18px; margin-bottom: 8px; }
+.opportunity-list { list-style: none; padding-right: 12px; }
+.opportunity-list li { padding: 7px 0; border-bottom: 1px solid #ecf0f1; }
+.opportunity-list li::before { content: '✅'; margin-left: 8px; }
+.strategies-section { padding: 50px 40px; background: linear-gradient(135deg, #ecf0f1 0%, #dfe6e9 100%); }
+.strategy-card {
+  background: white; margin: 28px 0; border-radius: 20px;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.1); overflow: hidden; transition: all 0.3s ease;
+}
+.strategy-card:hover { transform: translateY(-5px); box-shadow: 0 25px 50px rgba(0,0,0,0.15); }
+.strategy-header {
+  background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+  color: white; padding: 22px 28px; font-weight: bold; font-size: 1.25em;
+}
+.strategy-content { padding: 28px; }
+.strategy-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; margin-top: 18px; }
+.strategy-item {
+  background: #f8f9fa; padding: 18px; border-radius: 12px;
+  border-right: 4px solid #27ae60; transition: all 0.3s ease;
+}
+.strategy-item:hover { background: #e9ecef; transform: translateX(-3px); }
+.strategy-item h5 { color: #27ae60; margin-bottom: 7px; font-size: 1.05em; }
+.timeline-badge {
+  display: inline-block; background: #3498db; color: white;
+  padding: 4px 12px; border-radius: 15px; font-size: 0.8em; margin-top: 8px;
+}
+.kpi-badge {
+  display: inline-block; background: #8e44ad; color: white;
+  padding: 4px 12px; border-radius: 15px; font-size: 0.8em; margin-top: 5px; margin-right: 5px;
+}
+.innovation-section {
+  background: linear-gradient(135deg, #8e44ad 0%, #9b59b6 100%);
+  color: white; padding: 50px 40px; text-align: center;
+}
+.innovation-score { font-size: 5em; font-weight: bold; margin: 28px 0; text-shadow: 3px 3px 6px rgba(0,0,0,0.3); }
+.innovation-score-label { font-size: 1.4em; opacity: 0.9; margin-top: -15px; margin-bottom: 15px; }
+.innovation-components { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 22px; margin-top: 35px; }
+.component-card {
+  background: rgba(255,255,255,0.15); padding: 22px; border-radius: 15px;
+  backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.2); transition: all 0.3s ease;
+}
+.component-card:hover { background: rgba(255,255,255,0.22); transform: translateY(-3px); }
+.component-score { font-size: 2.4em; font-weight: bold; color: #f39c12; margin-bottom: 8px; }
+.component-title { font-size: 1.05em; font-weight: bold; margin-bottom: 8px; }
+.innovation-reg-section { background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 50px 40px; }
+.summary-box {
+  background: white; padding: 28px; border-radius: 15px; margin: 25px 0;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+}
+.committee-recommendations {
+  background: #f0f8ff; padding: 22px; border-radius: 15px; margin-top: 25px;
+  border-left: 6px solid #3498db; box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+.committee-recommendations h4 { color: #34495e; font-size: 1.3em; margin-bottom: 12px; }
+.regulation-section { padding: 40px; background: #ecf0f1; }
+.regulation-table { width: 100%; background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 8px 25px rgba(0,0,0,0.08); margin: 18px 0; }
+.regulation-table th, .regulation-table td { padding: 18px; text-align: right; border-bottom: 1px solid #ecf0f1; vertical-align: top; }
+.regulation-table th { background: #34495e; color: white; font-weight: bold; }
+.regulation-table tr:hover { background: #f8f9fa; }
+.badge-full { background: #27ae60; color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.85em; font-weight: bold; }
+.badge-partial { background: #f39c12; color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.85em; font-weight: bold; }
+.badge-dev { background: #3498db; color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.85em; font-weight: bold; }
+.badge-improve { background: #e74c3c; color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.85em; font-weight: bold; }
+.executive-section { padding: 50px 40px; background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: white; }
+.exec-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 22px; margin: 28px 0; }
+.exec-card {
+  background: rgba(255,255,255,0.1); padding: 22px; border-radius: 15px;
+  backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15); transition: all 0.3s ease;
+}
+.exec-card:hover { background: rgba(255,255,255,0.17); }
+.exec-card h4 { font-size: 1.1em; margin-bottom: 10px; color: #f39c12; }
+.recommendations-list { background: rgba(255,255,255,0.08); padding: 25px; border-radius: 15px; margin-top: 20px; }
+.recommendations-list h3 { margin-bottom: 18px; font-size: 1.3em; color: #f39c12; }
+.rec-item { background: rgba(255,255,255,0.08); margin: 12px 0; padding: 16px; border-radius: 10px; border-right: 4px solid #f39c12; }
+.footer { background: #1a252f; color: #bdc3c7; text-align: center; padding: 30px; font-size: 0.9em; }
+.footer strong { color: #3498db; }
+.back-to-top {
+  position: fixed; bottom: 30px; left: 30px;
+  background: #3498db; color: white;
+  width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; box-shadow: 0 4px 15px rgba(52,152,219,0.4);
+  transition: all 0.3s ease; z-index: 1000; opacity: 0; transform: translateY(20px); border: none; font-size: 1.3em;
+}
+.back-to-top.visible { opacity: 1; transform: translateY(0); }
+.back-to-top:hover { background: #2980b9; transform: translateY(-3px); }
+html { scroll-behavior: smooth; }
+@media (max-width: 768px) {
+  .header h1 { font-size: 2em; }
+  .nav-links { flex-direction: column; }
+  .nav-links a { border-left: none; border-bottom: 1px solid #2c3e50; font-size: 0.8em; }
+  .risks-grid, .overview-grid, .innovation-components { grid-template-columns: 1fr; }
+  .innovation-score { font-size: 3.5em; }
+  .risk-header { flex-direction: column; }
+  .risk-metrics { grid-template-columns: 1fr; }
+  .edit-toggle { top: 10px; left: 10px; padding: 10px 16px; font-size: 0.85em; }
+  .pdf-export { top: 60px; left: 10px; padding: 10px 16px; font-size: 0.85em; }
+}
+@keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+</style>
+</head>
+<body>
+<div class="container">
+  <button class="edit-toggle" onclick="toggleEdit()">🎨 התחל עריכה</button>
+  <button class="pdf-export" onclick="window.print()">📄 ייצוא ל-PDF</button>
+  <div class="success-message" id="successMessage">✅ מצב עריכה הופעל!</div>
+  <button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 
+  <!-- HEADER -->
+  <header class="header">
+    <h1 class="editable">⚠️ דוח ניהול סיכונים</h1>
+    <div class="subtitle editable">מיזם אלף-בית — בית ספר שש-שנתי ציבורי | רמת גן תשפ"ז</div>
+    <div class="date-badge editable">מסמך מייסד אלף-בית • מאי 2026</div>
+  </header>
+
+  <!-- NAV -->
+  <nav class="nav-menu">
+    <ul class="nav-links">
+      <li><a href="#project">📋 הגדרת הפרויקט</a></li>
+      <li><a href="#risks">⚠️ ניהול סיכונים</a></li>
+      <li><a href="#strategies">📈 תוכנית התמודדות</a></li>
+      <li><a href="#innovation-reg">🚀 אסדרת חדשנות</a></li>
+      <li><a href="#innovation-level">📊 רמת החדשנות</a></li>
+      <li><a href="#regulation-compliance">✅ התאמה לאסדרה</a></li>
+      <li><a href="#executive-summary">📝 סיכום מנהלים</a></li>
+    </ul>
+  </nav>
+
+  <!-- SECTION 1 -->
+  <section id="project" class="section">
+    <div class="section-header editable">📋 הגדרת הפרויקט</div>
+    <div class="project-overview">
+      <h2 style="text-align:center;color:#2c3e50;font-size:2em;margin-bottom:25px;" class="editable">פרטי הפרויקט</h2>
+      <div class="overview-grid">
+        <div class="overview-card">
+          <h4><span class="icon">👤</span><span class="editable">מוביל הפרויקט</span></h4>
+          <p class="editable">צוות מייסד — מיזם אלף-בית<br>אגף החינוך, עיריית רמת גן<br>בחסות ועדת היגוי עירונית</p>
+        </div>
+        <div class="overview-card">
+          <h4><span class="icon">🏢</span><span class="editable">ארגון</span></h4>
+          <p class="editable">מיזם אלף-בית — עיריית רמת גן<br>בשותפות: הטכניון, מכללת בית ברל, Google for Education<br>בפיקוח אגף מו"פ — משרד החינוך</p>
+        </div>
+        <div class="overview-card">
+          <h4><span class="icon">🌍</span><span class="editable">היקף הפרויקט</span></h4>
+          <p class="editable">פיילוט עירוני — רמת גן<br>שנה 1: 65–100 תלמידים, כיתות ז'<br>יעד 5 שנים: 2,000+ תלמידים, 20+ בתי ספר</p>
+        </div>
+        <div class="overview-card">
+          <h4><span class="icon">📅</span><span class="editable">לוח זמנים</span></h4>
+          <p class="editable">ספטמבר 2026: פתיחת "שנת גילוי" — כיתות ז'<br>2027/28: הוספת שכבה + בית ספר נוסף<br>2028/29: Playbook מגובש + פרסום ראשון</p>
+        </div>
+        <div class="overview-card">
+          <h4><span class="icon">🤖</span><span class="editable">סוג החדשנות</span></h4>
+          <p class="editable">AI בשלוש דרגות: כלי / אוריינות / ערכים<br>Mastery-Based Learning — שליטה לפני התקדמות<br>לומד כסוכן פעיל — Agency מרכזי</p>
+        </div>
+        <div class="overview-card">
+          <h4><span class="icon">📋</span><span class="editable">סטטוס רגולטורי</span></h4>
+          <p class="editable">נדרש אישור ניסוי פדגוגי ממשרד החינוך<br>ממתין לאישור אגף מו"פ<br>ארגז חול רגולטורי — בתהליך הגשה</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="goals-section">
+      <h3 class="editable">🎯 מטרות הפרויקט</h3>
+      <div class="goal-item editable"><strong>1. גידול הלומד כסוכן פעיל ועצמאי</strong><br>פיתוח Agency, ניהול עצמי ומטא-קוגניציה — המיומנויות הקריטיות לעידן ה-AI</div>
+      <div class="goal-item editable"><strong>2. למידה מבוססת Mastery בקצב אישי</strong><br>שליטה ב-90% לפני התקדמות — כמנגנון שוויוני שסוגר פערים, לא מרחיב אותם</div>
+      <div class="goal-item editable"><strong>3. שילוב AI בשלוש דרגות עומק</strong><br>כלי למידה, אוריינות ביקורתית ובינה אנושית — תוך שמירת שיקול הדעת האנושי</div>
+      <div class="goal-item editable"><strong>4. יצירת Playbook לאומי להעתקה</strong><br>תיעוד שיטתי של כל תהליך כדי לאפשר שכפול לכל בית ספר בישראל</div>
+    </div>
+
+    <div class="goals-section">
+      <h3 class="editable">📋 תוצרים מצופים</h3>
+      <div class="deliverable-item editable"><strong>בית ספר ציבורי פועל</strong> — שש-שנתי, ספטמבר 2026, כיתות ז' בשלב ראשון</div>
+      <div class="deliverable-item editable"><strong>Playbook לאומי</strong> — ספר הפעלה פדגוגי-טכנולוגי מלא לשכפול בכל מערכת החינוך</div>
+      <div class="deliverable-item editable"><strong>תוכנית הכשרת מחנכים</strong> — 80+ שעות Bootcamp בשיתוף מכללת בית ברל לפני פתיחה</div>
+      <div class="deliverable-item editable"><strong>מחקר אקדמי מלווה</strong> — שותפות עצמאית לפרסום ממצאים פומביים, כולל ביקורת</div>
+    </div>
+  </section>
+
+  <!-- SECTION 2: RISKS -->
+  <section id="risks" class="section">
+    <div class="section-header editable">⚠️ ניהול סיכונים</div>
+    <div class="risks-container">
+      <div class="risk-summary">
+        <div class="summary-card">
+          <div class="summary-number very-high editable">2</div>
+          <div class="editable">סיכונים בחומרה<br><strong>גבוהה</strong></div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-number medium editable">1</div>
+          <div class="editable">סיכונים בחומרה<br><strong>בינונית</strong></div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-number low editable">3</div>
+          <div class="editable">סה"כ<br><strong>סיכונים ממופים</strong></div>
+        </div>
+      </div>
+
+      <div class="risks-grid">
+
+        <!-- RISK 1 -->
+        <div class="risk-card risk-very-high">
+          <div class="risk-header">
+            <div class="risk-title editable">💔 שחיקה רגשית ובדידות תלמידים בלמידה AI-עצמאית</div>
+            <div class="risk-severity severity-very-high editable">חומרה גבוהה מאוד</div>
+          </div>
+          <div class="risk-metrics">
+            <div class="metric">
+              <div class="metric-value editable">9</div>
+              <div class="metric-label editable">הסתברות</div>
+            </div>
+            <div class="metric">
+              <div class="metric-value editable">9</div>
+              <div class="metric-label editable">עוצמת נזק</div>
+            </div>
+            <div class="metric">
+              <div class="metric-value editable">81</div>
+              <div class="metric-label editable">דרגת חומרה</div>
+            </div>
+          </div>
+          <div class="risk-description editable">
+            מסמך המייסד מכיר בצורך: "AI יכול לאבחן ולהתאים. אבל לא יכול לספק מה שילד זקוק לו ביותר: מבוגר משמעותי שרואה אותו ומאמין בו." אולם המבנה הקיים — שעתיים למידה ממוחשבת בכל בוקר, מחנך אחד ל-20 תלמידים ושיחה אישית רק אחת לשבועיים — יוצר חלל רגשי. תלמיד שנתקל בקושי ממושך מול מסך, ללא מענה אנושי בזמן אמת, עלול להישאר לבד עם תסכולו שעות ארוכות. הסיכון מתחדד לאור ראיות מהשטח (Alpha School, המודל עליו הצהיר צוות אלף-בית שביקר).
+          </div>
+          <div class="risk-evidence editable">
+            <strong>⚠️ ראיות מהשטח — Alpha School Brownsville (WIRED, אוקטובר 2025):</strong><br>
+            Alpha School הוא המודל המוצהר שביקר צוות אלף-בית. תחקיר WIRED חשף: תלמידת גיל 9 שחזרה על משימת כפל 20+ פעמים תוך התמוטטות רגשית — "אמרה שתעדיף למות מלהמשיך." תלמידים הפסיקו לאכול ארוחות כדי להדביק פיגור במדדים. תלמידה בת 13 פיתחה הרגלי פגיעה עצמית ("קרעתי שיער ועור") כתוצאה מלחץ מדדים. מחנכי בית הספר הוגדרו כ"לא מלמדים" — "הגיידים לא עושים שום הוראה" (ראש Alpha Brownsville).
+          </div>
+          <div class="risk-impact">
+            <div class="impact-title editable">השלכות אפשריות:</div>
+            <ul class="impact-list">
+              <li class="editable">שחיקה נפשית ופגיעה בשלומות תלמידים הנתקלים בכישלון ממושך מול מסך ללא סיוע אנושי בזמן אמת</li>
+              <li class="editable">בדידות חברתית — הלמידה הממוחשבת מצמצמת אינטראקציה ספונטנית ופוגעת בתחושת השייכות שהמסמך מצהיר עליה</li>
+              <li class="editable">פגיעה בתחושת המסוגלות: כישלון חוזר ב-Mastery ללא ליווי אנושי מספיק עלול לייצר חרדת ביצוע כרונית</li>
+            </ul>
+            <div class="opportunity-title editable">הזדמנויות שנוצרות:</div>
+            <ul class="opportunity-list">
+              <li class="editable">פיתוח פרוטוקול "כפתור עצירה אנושי" — מענה מחנך פיזי תוך 5 דקות לכל תלמיד שנתקל בכישלון חוזר</li>
+              <li class="editable">דשבורד שלומות בזמן אמת למחנך — שילוב דיווח רגשי יומי של התלמיד לצד מדדי Mastery</li>
+              <li class="editable">מחקר מלווה בית ברל על רווחה נפשית בלמידה AI-עצמאית — ידע ייחודי שאין לו מקבילה בישראל</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- RISK 2 -->
+        <div class="risk-card risk-high">
+          <div class="risk-header">
+            <div class="risk-title editable">📊 סחיפת מדדים — Agency הלומד הופך ללחץ חיצוני של ציונים ותגמולים</div>
+            <div class="risk-severity severity-high editable">חומרה גבוהה</div>
+          </div>
+          <div class="risk-metrics">
+            <div class="metric">
+              <div class="metric-value editable">7</div>
+              <div class="metric-label editable">הסתברות</div>
+            </div>
+            <div class="metric">
+              <div class="metric-value editable">9</div>
+              <div class="metric-label editable">עוצמת נזק</div>
+            </div>
+            <div class="metric">
+              <div class="metric-value editable">63</div>
+              <div class="metric-label editable">דרגת חומרה</div>
+            </div>
+          </div>
+          <div class="risk-description editable">
+            מסמך המייסד מסתמך על תיאוריית SDT של Deci & Ryan (2000) ומציב מוטיבציה פנימית כבסיס. אולם מערכת Mastery עם דשבורדים שקופים, KPI מדידים ולחץ ל-90% בכל יחידה — עלולה להפוך את חווית הלמידה מ"עשייה מתוך סקרנות" ל"עשייה כדי לעמוד במדד". כאשר הדגש עובר מ"מה גיליתי" ל"האם עמדתי ביעד", נפגע עיקרון ה-Agency המרכזי שעליו בנוי כל המודל.
+          </div>
+          <div class="risk-evidence editable">
+            <strong>⚠️ ראיות מהשטח — Alpha School Brownsville (WIRED, אוקטובר 2025):</strong><br>
+            Alpha הנהיגה מטבע פנימי ("Alphas") לתגמול הישגים — כסף, טיולים, ציוד. תלמידים תיארו: "הכל הפך לתגמול, תגמול, תגמול." הורה: "הוא הפך ממילד שמח למכונת עבודה." מנהלת Alpha הודתה שהיעדים "תוכננו להיות בלתי אפשריים" — פרדוקס ישיר לתפיסת Agency. תלמידים עבדו בלילות כדי לעמוד ב"קצב ייצור" — לא קצב למידה.
+          </div>
+          <div class="risk-impact">
+            <div class="impact-title editable">השלכות אפשריות:</div>
+            <ul class="impact-list">
+              <li class="editable">הרס המוטיבציה הפנימית — תלמידים לומדים "בשביל הדשבורד", בניגוד ישיר לחזון ה-Agency שמסמך המייסד מציב</li>
+              <li class="editable">חרדת ביצוע כרונית — הלחץ להגיע ל-90% Mastery הופך ללחץ מתמשך שפוגע בסקרנות ובשלומות</li>
+              <li class="editable">פגיעה בזהות הלומד — "אני כישלון" במקום "אני עדיין לומד", כשמדד דיגיטלי גלוי לכולם בזמן אמת</li>
+            </ul>
+            <div class="opportunity-title editable">הזדמנויות שנוצרות:</div>
+            <ul class="opportunity-list">
+              <li class="editable">שילוב מדדי "קצב צמיחה" לצד מדדי שליטה — "עד לפה הגעתי" לצד "כמה ידעתי", לפי SDT שהמסמך מזכיר</li>
+              <li class="editable">שגרת סגירת יום ממוקדת בשאלה: "מה גיליתי היום?" — לא רק "האם עמדתי ביעד?"</li>
+              <li class="editable">הימנעות מקישור תגמולים חיצוניים ישירות למדדי Mastery — בהתאם לעיקרון SDT המוזכר במסמך המייסד עצמו</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- RISK 3 -->
+        <div class="risk-card risk-medium">
+          <div class="risk-header">
+            <div class="risk-title editable">🔍 פערי מיומנויות "בלתי נראות" — כתיבה ביד, הבנת הנקרא וביטוי בעל פה שמערכת ה-AI אינה מזהה</div>
+            <div class="risk-severity severity-medium editable">חומרה בינונית</div>
+          </div>
+          <div class="risk-metrics">
+            <div class="metric">
+              <div class="metric-value editable">7</div>
+              <div class="metric-label editable">הסתברות</div>
+            </div>
+            <div class="metric">
+              <div class="metric-value editable">6</div>
+              <div class="metric-label editable">עוצמת נזק</div>
+            </div>
+            <div class="metric">
+              <div class="metric-value editable">42</div>
+              <div class="metric-label editable">דרגת חומרה</div>
+            </div>
+          </div>
+          <div class="risk-description editable">
+            מסמך המייסד מגדיר Mastery כמנגנון שסוגר פערים: "תלמיד שלא הגיע לרמת שליטה של 90% אינו עובר הלאה — אבל אינו נעזב." אולם מערכות Mastery דיגיטליות מודדות מה שניתן למדוד אלגוריתמית: תשובות נכונות, קצב, שליטה בחומר מוגדר. מיומנויות כתיבה ביד, קריאה להבנה עמוקה, ביטוי בעל פה ורכישת ידע לא-מובנה — אינן "נראות" למערכת ועלולות להיפגע בשקט.
+          </div>
+          <div class="risk-evidence editable">
+            <strong>⚠️ ראיות מהשטח — Alpha School Brownsville (WIRED, אוקטובר 2025):</strong><br>
+            ילד בן 8 שעזב Alpha קרא מהר אך לא הבין את תוכן הקריאה. בכיתה ג' החדשה כתב ברמת גן בלבד — לא ידע לרדת לשורה הבאה. הורה: "כל מה ש-Alpha לימד אותו זה לקרוא מהר ולהמשיך הלאה." ילדים שעזבו הציגו אחיזת עיפרון לקויה ואיות לקוי. ה-Pennsylvania Department of Education דחתה בקשת Alpha להקמת בית ספר: "המודל לא מוכח ואינו כולל חינוך גופני, שפות או מדעי חברה."
+          </div>
+          <div class="risk-impact">
+            <div class="impact-title editable">השלכות אפשריות:</div>
+            <ul class="impact-list">
+              <li class="editable">בוגרים עם "Mastery דיגיטלי" גבוה אך פערים קשים בכתיבה ביד, הבנת הנקרא העמוקה ומיומנויות חברתיות</li>
+              <li class="editable">קושי במעבר לבית ספר אחר — שיטות ה-Mastery הדיגיטליות אינן מוכרות במערכת הפורמלית ובבגרויות</li>
+              <li class="editable">פערים שמתגלים מאוחר מדי — לאחר שנים של "הצלחה" דיגיטלית, עלול להיחשף פער שקשה יותר לסגור</li>
+            </ul>
+            <div class="opportunity-title editable">הזדמנויות שנוצרות:</div>
+            <ul class="opportunity-list">
+              <li class="editable">רצועת "העמקה" (10:45–12:15) שכוללת חובה של כתיבה ביד, דיון בעל פה וחשיבה ביקורתית — כמתוכנן במסמך</li>
+              <li class="editable">הערכת מיומנויות "בלתי נראות" חצי-שנתית — בנוסף למדדי Mastery הדיגיטליים, כחלק מ-IDP</li>
+              <li class="editable">שותפות מחקרית עם בית ברל לזיהוי הפערים שמערכות AI אינן מזהות — ידע ייחודי לתחום כולו</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3: STRATEGIES -->
+  <section id="strategies" class="section">
+    <div class="section-header editable">📈 תוכנית התמודדות</div>
+    <div class="strategies-section">
+
+      <div class="strategy-card">
+        <div class="strategy-header editable">💔 אסטרטגיה 1 — פרוטוקול שלומות ונוכחות אנושית בזמן אמת</div>
+        <div class="strategy-content">
+          <p class="editable" style="color:#34495e;margin-bottom:18px;">בניית מערכת ליווי רגשי מובנית שמבטיחה שאף תלמיד לא יישאר לבד מול מסך בזמן מצוקה — לפי עיקרון ה-"חניכה האנושית הרציפה" שבמסמך המייסד.</p>
+          <div class="strategy-grid">
+            <div class="strategy-item">
+              <h5 class="editable">🚨 כפתור עצירה אנושי</h5>
+              <p class="editable">הגדרת פרוטוקול: כישלון חוזר 3+ פעמים ביחידה → התראה אוטומטית למחנך → מענה פיזי תוך 5 דקות, ללא קשר ללוח הזמנים</p>
+              <span class="timeline-badge">לפני פתיחה — אוגוסט 2026</span>
+            </div>
+            <div class="strategy-item">
+              <h5 class="editable">📊 דשבורד שלומות חי</h5>
+              <p class="editable">שילוב דיווח רגשי יומי של התלמיד (1–5) בדשבורד המחנך — לצד מדדי Mastery, לא במקומם</p>
+              <span class="timeline-badge">שנה 1 — מהיום הראשון</span>
+            </div>
+            <div class="strategy-item">
+              <h5 class="editable">📊 מדד הצלחה</h5>
+              <p class="editable">0 אירועי שחיקה רגשית חמורים | 90%+ תלמידים מדווחים על תחושת שייכות | מחקר בית ברל חצי-שנתי</p>
+              <span class="kpi-badge">KPI</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="strategy-card">
+        <div class="strategy-header editable">📊 אסטרטגיה 2 — הגנה על המוטיבציה הפנימית (SDT) מפני סחיפת מדדים</div>
+        <div class="strategy-content">
+          <p class="editable" style="color:#34495e;margin-bottom:18px;">יישום מעשי של תיאוריית SDT המוזכרת במסמך המייסד — שמירה על מוטיבציה פנימית כמנוע, לא תגמולים חיצוניים.</p>
+          <div class="strategy-grid">
+            <div class="strategy-item">
+              <h5 class="editable">🎯 מדדי צמיחה לצד מדדי שליטה</h5>
+              <p class="editable">הדשבורד מציג "עד לפה הגעתי היום" לצד "רמת השליטה שלי" — שני הממדים יחד, לא רק ה-Mastery הבינארי</p>
+              <span class="timeline-badge">עיצוב — יוני–יולי 2026</span>
+            </div>
+            <div class="strategy-item">
+              <h5 class="editable">🚫 הפרדה מלאה: מדדים ≠ תגמולים</h5>
+              <p class="editable">אסור לקשור תגמולים חיצוניים (כסף, טיולים, פרסים) ישירות למדדי Mastery — לפי SDT ולפי לקחי Alpha School</p>
+              <span class="timeline-badge">מדיניות קבועה</span>
+            </div>
+            <div class="strategy-item">
+              <h5 class="editable">📊 מדד הצלחה</h5>
+              <p class="editable">80%+ תלמידים מדווחים על מוטיבציה פנימית (לא חיצונית) | שגרת סגירת יום כוללת שאלת "מה גיליתי?"</p>
+              <span class="kpi-badge">KPI</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- SECTION 4: INNOVATION REG -->
+  <section id="innovation-reg" class="section">
+    <div class="section-header editable">🚀 אסדרת חדשנות</div>
+    <div class="innovation-reg-section">
+      <div class="summary-box">
+        <h3 style="color:#8e44ad;margin-bottom:15px;" class="editable">הגדרת רמת החדשנות — על בסיס עקרונות RRI</h3>
+        <p class="editable" style="color:#34495e;line-height:1.8;">
+          מיזם אלף-בית מהווה <strong>חדשנות חינוכית מערכתית ברמה גבוהה מאוד</strong>. המסמך המייסד מגדיר זאת במפורש: "מערכת הפעלה פדגוגית חדשה לחלוטין" — לא שיפור מודל קיים. הכנסת AI בשלוש דרגות, מחנך כמנטור ל-20 תלמידים, Mastery-Based Learning ואקוסיסטם עירוני — כולם שינויים מבניים עמוקים הדורשים אסדרה מוסדרת. לפי חוזר מנכ"ל לאסדרת חדשנות, מיזם זה חייב לעבור ועדת משנה ולפעול במסגרת ארגז חול רגולטורי.
+        </p>
+        <p class="editable" style="color:#34495e;line-height:1.8;margin-top:12px;">
+          עקרונות RRI הנדרשים: <strong>שלומות ומוגנות</strong> (ראיות Alpha מחייבות פרוטוקול שלומות מפורש לפני פתיחה), <strong>הוגנות ונגישות</strong> (מדיניות גיוס שוויונית), <strong>שקיפות</strong> (פרסום ממצאי מחקר — כולל ביקורתיים), <strong>אחריותיות</strong> (מנגנון יציאה מוסדר אם המודל נכשל).
+        </p>
+      </div>
+      <div class="committee-recommendations">
+        <h4>🏛️ המלצת ועדת המשנה לאסדרת חדשנות</h4>
+        <p class="editable" style="color:#34495e;line-height:1.8;">
+          בהתאם לסעיף 5.2.3 בחוזר המנכ"ל, מומלץ לאשר את המיזם כ<strong>ארגז חול רגולטורי</strong> — בתנאים: (1) הגשת תוכנית עבודה מפורטת לאגף מו"פ; (2) <strong>פרוטוקול שלומות מאושר</strong> לפני פתיחה — בהתבסס על לקחי Alpha School; (3) מחקר אורך עצמאי שממצאיו פומביים; (4) פיקוח רבעוני של ועדת המשנה; (5) מנגנון יציאה מסודר אם Mastery ממוצע יורד מתחת ל-70% בסוף סמסטר ראשון.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 5: INNOVATION LEVEL -->
+  <section id="innovation-level" class="section">
+    <div class="section-header editable">📊 רמת החדשנות בפרויקט</div>
+    <div class="innovation-section">
+      <h2 class="editable" style="font-size:1.6em;margin-bottom:5px;">ציון חדשנות כולל</h2>
+      <div class="innovation-score editable">8.5</div>
+      <div class="innovation-score-label editable">/ 10 — חדשנות גבוהה מאוד</div>
+      <p class="editable" style="opacity:0.85;max-width:700px;margin:0 auto;">ממוצע 4 רכיבי החדשנות — מיזם ברמת חדשנות גבוהה מאוד, מחייב ליווי ופיקוח אסדרה מוסדר ופרוטוקול שלומות מפורש</p>
+      <div class="innovation-components">
+        <div class="component-card">
+          <div class="component-score editable">9</div>
+          <div class="component-title editable">השפעה פדגוגית</div>
+          <p class="editable" style="opacity:0.85;font-size:0.95em;">מהפכה בתפקיד המחנך, Mastery-Based Learning, Agency כמרכז — שינוי פרדיגמטי מלא בהוראה-למידה</p>
+        </div>
+        <div class="component-card">
+          <div class="component-score editable">8</div>
+          <div class="component-title editable">מורכבות טכנולוגית</div>
+          <p class="editable" style="opacity:0.85;font-size:0.95em;">AI בשלוש דרגות, דשבורד IDP בזמן אמת, Google for Education — שילוב טכנולוגי מורכב ולא מוכח בגיל ז'-י"ב</p>
+        </div>
+        <div class="component-card">
+          <div class="component-score editable">8</div>
+          <div class="component-title editable">שינוי ארגוני</div>
+          <p class="editable" style="opacity:0.85;font-size:0.95em;">הקמת מוסד חדש מן היסוד, מחנך כמנטור (לא מורה), אקוסיסטם עירוני — שותפויות רב-גופיות מורכבות</p>
+        </div>
+        <div class="component-card">
+          <div class="component-score editable">9</div>
+          <div class="component-title editable">סיכון טכנולוגי</div>
+          <p class="editable" style="opacity:0.85;font-size:0.95em;">אי ודאות גבוהה — ראיות Alpha מחייבות זהירות. פרטיות קטינים, תלות Google, Mastery שיכול לייצר לחץ</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 6: REGULATION -->
+  <section id="regulation-compliance" class="section">
+    <div class="section-header editable">✅ התאמה לדרישות אסדרה</div>
+    <div class="regulation-section">
+      <table class="regulation-table">
+        <thead>
+          <tr>
+            <th>דרישת אסדרה</th>
+            <th>סטטוס התאמה</th>
+            <th>פעולה נדרשת</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="editable"><strong>פרוטוקול שלומות מאושר לפני פתיחה</strong><br><small>עיקרון RRI — שלומות ומוגנות | לקחי Alpha School</small></td>
+            <td><span class="badge-improve editable">טעון שיפור</span></td>
+            <td class="editable">גיבוש פרוטוקול "כפתור עצירה אנושי" ודשבורד שלומות — לפני אוגוסט 2026</td>
+          </tr>
+          <tr>
+            <td class="editable"><strong>הגשת בקשה לועדת המשנה לאסדרת חדשנות</strong><br><small>סעיף 6.1 — חוזר מנכ"ל</small></td>
+            <td><span class="badge-dev editable">בפיתוח</span></td>
+            <td class="editable">הגשת תוכנית עבודה מפורטת לאגף מו"פ — מאי 2026</td>
+          </tr>
+          <tr>
+            <td class="editable"><strong>אישור ארגז חול רגולטורי</strong><br><small>סעיף 5.2.3 — חוזר מנכ"ל</small></td>
+            <td><span class="badge-dev editable">בפיתוח</span></td>
+            <td class="editable">בקשה לאישור ארגז חול כולל תנאי פיקוח ומנגנון יציאה מוסדר</td>
+          </tr>
+          <tr>
+            <td class="editable"><strong>עמידה בעקרונות חדשנות אחראית RRI</strong><br><small>שלומות, הוגנות, שקיפות, אחריותיות</small></td>
+            <td><span class="badge-partial editable">עמידה חלקית</span></td>
+            <td class="editable">השלמת מדיניות פרטיות, פרוטוקול AI אחראי, פרסום ממצאי מחקר — גם ביקורתיים</td>
+          </tr>
+          <tr>
+            <td class="editable"><strong>הכשרת מחנכים — 80+ שעות לפני פתיחה</strong><br><small>דרישת Go/No-Go — מסמך המייסד</small></td>
+            <td><span class="badge-partial editable">עמידה חלקית</span></td>
+            <td class="editable">השלמת Bootcamp כולל מודול שלומות ו-SDT — עד אוגוסט 2026 עם בית ברל</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- SECTION 7: EXECUTIVE SUMMARY -->
+  <section id="executive-summary" class="section">
+    <div class="section-header editable">📝 סיכום מנהלים והמלצות</div>
+    <div class="executive-section">
+      <h2 style="text-align:center;margin-bottom:25px;color:#f39c12;" class="editable">סיכום ביצועי</h2>
+      <div class="exec-grid">
+        <div class="exec-card">
+          <h4>📊 רמת חדשנות</h4>
+          <p class="editable">8.5/10 — חדשנות גבוהה מאוד<br>מחייבת ארגז חול רגולטורי ופרוטוקול שלומות מפורש לפני פתיחה</p>
+        </div>
+        <div class="exec-card">
+          <h4>💔 סיכון שלומות</h4>
+          <p class="editable">הסיכון הגבוה ביותר (81) — ראיות Alpha מחייבות טיפול מיידי<br>אין לפתוח ללא פרוטוקול שלומות מאושר</p>
+        </div>
+        <div class="exec-card">
+          <h4>⚠️ רמת סיכון כוללת</h4>
+          <p class="editable">2 סיכונים גבוהים (81, 63) + 1 בינוני (42)<br>מיתון אפשרי עם יישום אסטרטגיות שלומות ו-SDT</p>
+        </div>
+      </div>
+      <div class="recommendations-list">
+        <h3>💡 המלצות מרכזיות</h3>
+        <div class="rec-item editable">
+          <strong>1. גיבוש פרוטוקול שלומות לפני כל דבר אחר</strong><br>
+          בהתבסס על לקחי Alpha School — הגדרת "כפתור עצירה אנושי", דשבורד רגשי בזמן אמת ומנגנון מענה למצוקה בתוך 5 דקות. זהו תנאי Go/No-Go לפתיחה
+        </div>
+        <div class="rec-item editable">
+          <strong>2. הפרדה מוחלטת: מדדי Mastery ≠ תגמולים חיצוניים</strong><br>
+          לפי SDT ולפי לקחי Alpha — אין לקשור ציונים, כסף, פרסים או טיולים למדדים דיגיטליים. המוטיבציה הפנימית היא הנכס המרכזי של המודל
+        </div>
+        <div class="rec-item editable">
+          <strong>3. הוספת הערכת מיומנויות "בלתי נראות" חצי-שנתית</strong><br>
+          כתיבה ביד, הבנת הנקרא העמוקה, ביטוי בעל פה — בנוסף למדדי Mastery הדיגיטליים, כחלק מה-IDP של כל תלמיד
+        </div>
+        <div class="rec-item editable">
+          <strong>4. הגשה לועדת המשנה לאסדרת חדשנות — מיידי</strong><br>
+          הגשת בקשה לארגז חול רגולטורי לפי סעיף 5.2.3 בחוזר המנכ"ל — מאי 2026, לפחות 4 חודשים לפני פתיחת שנה"ל תשפ"ז
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:30px;">
+        <p class="editable" style="opacity:0.75;font-size:0.95em;">צעדים מיידיים: (1) פרוטוקול שלומות — מאי 2026 | (2) הגשה לועדת המשנה — מאי 2026 | (3) Bootcamp מחנכים כולל SDT — אוגוסט 2026 | (4) פתיחה — ספטמבר 2026</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <p class="editable">דוח ניהול סיכונים — מיזם אלף-בית | רמת גן תשפ"ז | מאי 2026</p>
+    <p style="margin-top:8px;">מבוסס על: מסמך מייסד אלף-בית (2024–2025) | WIRED Alpha School Brownsville (אוק' 2025) | עקרונות RRI | חוזר מנכ"ל לאסדרת חדשנות</p>
+    <p style="margin-top:10px;"><strong>פיתוח ועיצוב המוצר: ד"ר אסף אוזן</strong></p>
+  </footer>
+</div>
+
+<script>
+let editMode = false;
+function toggleEdit() {
+  editMode = !editMode;
+  const btn = document.querySelector('.edit-toggle');
+  const all = document.querySelectorAll('.editable');
+  all.forEach(el => el.setAttribute('contenteditable', editMode ? 'true' : 'false'));
+  btn.textContent = editMode ? '✅ סיום עריכה' : '🎨 התחל עריכה';
+  btn.classList.toggle('active', editMode);
+  const msg = document.getElementById('successMessage');
+  msg.textContent = editMode ? '✅ מצב עריכה הופעל!' : '💾 השינויים נשמרו בדף';
+  msg.classList.add('show');
+  setTimeout(() => msg.classList.remove('show'), 2500);
+}
+window.addEventListener('scroll', () => {
+  const btn = document.getElementById('backToTop');
+  btn.classList.toggle('visible', window.scrollY > 400);
+});
+</script>
+</body>
+</html>
